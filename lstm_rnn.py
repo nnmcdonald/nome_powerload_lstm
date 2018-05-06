@@ -2,9 +2,9 @@ import math
 import numpy
 from keras.callbacks import Callback
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+from keras.layers import Dense, Dropout
 from keras.layers.recurrent import LSTM
-from sklearn import preprocessing, linear_model
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 
 # Keeps track of loss per batch
@@ -118,18 +118,18 @@ def average_amps(train_data, validation_data, time_period):
 # y values are the expected amp values for the next time step,
 # if no_amp is true then the amp values aren't included in the input vectors,
 # returns the lstm model
-def get_lstm_model(train_data, validation_data, layers, nodes, drop, eps, b_size, no_amp):
+def get_lstm_model(train_data, validation_data, pred_len, layers, nodes, drop, eps, b_size, no_amp):
     scaler = preprocessing.MinMaxScaler(feature_range=(0,1))
     start_index = 1
     if no_amp:
         start_index = 2
 
-    x_train_data = train_data[:-1]
+    x_train_data = train_data[:-pred_len]
     # The expected value, y, for a given x is is the average amps over the next n instances
     # where n=pred_len, if pred_len=1 the expected value is the amp value of the next instance
-    y_train_data = [train_data[i][1] for i in range(1, len(train_data))]
-    x_validation_data = validation_data[:-1]
-    y_validation_data = [validation_data[i][1] for i in range(1, len(validation_data))]
+    y_train_data = [train_data[i][1] for i in range(pred_len, len(train_data))]
+    x_validation_data = validation_data[:-pred_len]
+    y_validation_data = [validation_data[i][1] for i in range(pred_len, len(validation_data))]
 
     # scale the data to range 0 to 1 and store as numpy.array
     x_train = numpy.array([[i] for i in scaler.fit_transform([x_train_data[i][start_index:] for i in range(len(x_train_data))])])
@@ -179,17 +179,17 @@ next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 120, 0
 
 # lstm to predict average amps over next forty minutes
 t, v = average_amps(train_data, validation_data, 4)
-next_forty_min_lstm = get_lstm_model(t, v, 2, 120, 0.2, 2, 300, False)
+next_forty_min_lstm = get_lstm_model(t, v, 4, 2, 120, 0.2, 2, 300, False)
 next_forty_min_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
 
 # lstm to predict average amps over next 12 hours
 t, v = average_amps(train_data, validation_data, 72)
-next_twelve_hour_lstm = get_lstm_model(t, v, 2, 120, 0.2, 2, 400, False)
-next_twelve_hour_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
+next_twelve_hour_lstm = get_lstm_model(t, v, 72, 3, 100, 0.2, 2, 300, False)
+next_twelve_hour_lstm_no_amp = get_lstm_model(t, v, 72, 2, 100, 0, 2, 400, True)
 
 # lstm to predict average amps over next 24 hours
 t, v = average_amps(train_data, validation_data, 144)
-next_24_hour_lstm = get_lstm_model(t, v, 3, 110, 0.2, 3, 500, False)
+next_24_hour_lstm = get_lstm_model(t, v, 144, 3, 110, 0.2, 2, 500, False)
 next_24_hour_lstm_no_amp = get_lstm_model(t, v, 3, 120, 0.2, 3, 400, True)
 
 

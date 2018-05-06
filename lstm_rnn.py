@@ -180,7 +180,7 @@ next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 1, 120
 # lstm to predict average amps over next forty minutes
 t, v = average_amps(train_data, validation_data, 4)
 next_forty_min_lstm = get_lstm_model(t, v, 4, 2, 120, 0.2, 2, 300, False)
-next_forty_min_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
+next_forty_min_lstm_no_amp = get_lstm_model(t, v, 4, 2, 100, 0, 2, 400, True)
 
 # lstm to predict average amps over next 12 hours
 t, v = average_amps(train_data, validation_data, 72)
@@ -190,6 +190,6 @@ next_twelve_hour_lstm_no_amp = get_lstm_model(t, v, 72, 2, 100, 0, 2, 400, True)
 # lstm to predict average amps over next 24 hours
 t, v = average_amps(train_data, validation_data, 144)
 next_24_hour_lstm = get_lstm_model(t, v, 144, 3, 110, 0.2, 2, 500, False)
-next_24_hour_lstm_no_amp = get_lstm_model(t, v, 3, 120, 0.2, 3, 400, True)
+next_24_hour_lstm_no_amp = get_lstm_model(t, v, 144, 3, 120, 0.2, 3, 400, True)
 
 

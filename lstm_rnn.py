@@ -103,6 +103,12 @@ def plot_predicted_values(pred):
     plt.title("Predicted Values")
     plt.plot([i for i in range(len(pred))],[pred[i][0][0] for i in range(len(pred))], color='orange')
 
+# adjust the input instances so the average amps are over time_period*10 minutes
+def average_amps(train_data, validation_data, time_period):
+    t = [([train_data[i][0]] + [float(sum(j[1] for j in train_data[(i-time_period+1):(i+1)])/time_period)] + train_data[i][2:]) for i in range(time_period-1, len(train_data))]
+    v = [([validation_data[i][0]] + [float(sum(j[1] for j in validation_data[i-time_period+1:i+1])/time_period)] + validation_data[i][2:]) for i in range(time_period-1, len(validation_data))]
+    return t, v
+
 # pred_len is the time period to predict (example: each instance is 
 # the average over 10 min, so pred_len=1 will predict the next 
 # instance amp value given an instance vector, pred_len=4 will predict the
@@ -113,22 +119,22 @@ def plot_predicted_values(pred):
 # y values are the expected amp values for the next time step,
 # if no_amp is true then the amp values aren't included in the input vectors,
 # returns the lstm model
-def get_lstm_model(train_data, validation_data, pred_len, layers, nodes, drop, eps, b_size, no_amp):
+def get_lstm_model(train_data, validation_data, layers, nodes, drop, eps, b_size, no_amp):
     scaler = preprocessing.MinMaxScaler(feature_range=(0,1))
     start_index = 1
     if no_amp:
         start_index = 2
 
-    xtrain_data = train_data[:-(pred_len)]
+    x_train_data = train_data[:-1]
     # The expected value, y, for a given x is is the average amps over the next n instances
     # where n=pred_len, if pred_len=1 the expected value is the amp value of the next instance
-    ytrain_data = [(sum([j[1] for j in train_data[i:(i+pred_len)]])/pred_len) for i in range(1, len(train_data)-pred_len+1)]
-    x_validation_data = validation_data[:-pred_len]
-    y_validation_data = [(sum([j[1] for j in validation_data[i:(i+pred_len)]])/pred_len) for i in range(1, len(validation_data)-pred_len+1)]
+    y_train_data = [train_data[i][1] for i in range(1, len(train_data))]
+    x_validation_data = validation_data[:-1]
+    y_validation_data = [validation_data[i][1] for i in range(1, len(validation_data))]
 
     # scale the data to range 0 to 1 and store as numpy.array
-    x_train = numpy.array([[i] for i in scaler.fit_transform([xtrain_data[i][start_index:] for i in range(len(xtrain_data))])])
-    y_train = numpy.array([[i] for i in scaler.fit_transform([[ytrain_data[i]] for i in range(len(ytrain_data))])])
+    x_train = numpy.array([[i] for i in scaler.fit_transform([x_train_data[i][start_index:] for i in range(len(x_train_data))])])
+    y_train = numpy.array([[i] for i in scaler.fit_transform([[y_train_data[i]] for i in range(len(y_train_data))])])
 
     x_test = numpy.array([[i] for i in scaler.fit_transform([x_validation_data[i][start_index:] for i in range(len(x_validation_data))])])
     y_test = numpy.array([[i] for i in scaler.fit_transform([[y_validation_data[i]] for i in range(len(y_validation_data))])])
@@ -157,23 +163,34 @@ def get_lstm_model(train_data, validation_data, pred_len, layers, nodes, drop, e
     plot_predicted_values(predictions)
     plot_predictions_vs_expected(predictions, y_test)
     plot_loss(history.losses[0], history.losses[1])
+    plot.show()
     return lstm_model
 
 # split the data, 75% for training, 25% for validation
 train_data = data[:int(len(data)*0.75)]
 validation_data = data[int(len(data)*0.75):]
 
-next_ten_min_lstm = get_lstm_model(train_data, validation_data, 1, 1, 100, 0, 2, 64, False)
-next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 1, 120, 0, 1, 64, True)
+# input instances are 10 minutes apart, have 9 weather features and 
+# one amp measurement feature which is the average for the 
+# time period being predicted
 
-next_forty_min_lstm = get_lstm_model(train_data, validation_data, 4, 1, 120, 0.2, 2, 400, False)
-next_forty_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 4, 2, 100, 0, 2, 400, True)
+# lstm to predict average amps over next ten minutes
+next_ten_min_lstm = get_lstm_model(train_data, validation_data, 1, 100, 0, 2, 64, False)
+next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 120, 0, 1, 64, True)
 
-next_twelve_hour_lstm = get_lstm_model(train_data, validation_data, 72, 2, 120, 0.2, 2, 400, False)
-next_twelve_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 72, 2, 100, 0, 2, 400, True)
+# lstm to predict average amps over next forty minutes
+t, v = average_amps(train_data, validation_data, 4)
+next_forty_min_lstm = get_lstm_model(t, v, 2, 120, 0.2, 2, 300, False)
+next_forty_min_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
 
-next_24_hour_lstm = get_lstm_model(train_data, validation_data, 144, 3, 110, 0.2, 3, 500, False)
-next_24_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 144, 3, 120, 0.2, 3, 400, True)
+# lstm to predict average amps over next 12 hours
+t, v = average_amps(train_data, validation_data, 72)
+next_twelve_hour_lstm = get_lstm_model(t, v, 2, 120, 0.2, 2, 400, False)
+next_twelve_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 2, 100, 0, 2, 400, True)
 
-plt.show()
+# lstm to predict average amps over next 24 hours
+t, v = average_amps(train_data, validation_data, 144)
+next_24_hour_lstm = get_lstm_model(t, v, 3, 110, 0.2, 3, 500, False)
+next_24_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 3, 120, 0.2, 3, 400, True)
+
 

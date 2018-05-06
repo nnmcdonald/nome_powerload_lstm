@@ -5,7 +5,6 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers.recurrent import LSTM
 from sklearn import preprocessing, linear_model
-from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 
 # Keeps track of loss per batch
@@ -186,11 +185,11 @@ next_forty_min_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
 # lstm to predict average amps over next 12 hours
 t, v = average_amps(train_data, validation_data, 72)
 next_twelve_hour_lstm = get_lstm_model(t, v, 2, 120, 0.2, 2, 400, False)
-next_twelve_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 2, 100, 0, 2, 400, True)
+next_twelve_hour_lstm_no_amp = get_lstm_model(t, v, 2, 100, 0, 2, 400, True)
 
 # lstm to predict average amps over next 24 hours
 t, v = average_amps(train_data, validation_data, 144)
 next_24_hour_lstm = get_lstm_model(t, v, 3, 110, 0.2, 3, 500, False)
-next_24_hour_lstm_no_amp = get_lstm_model(train_data, validation_data, 3, 120, 0.2, 3, 400, True)
+next_24_hour_lstm_no_amp = get_lstm_model(t, v, 3, 120, 0.2, 3, 400, True)
 
 

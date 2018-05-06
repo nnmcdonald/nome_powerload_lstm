@@ -174,8 +174,8 @@ validation_data = data[int(len(data)*0.75):]
 # time period being predicted
 
 # lstm to predict average amps over next ten minutes
-next_ten_min_lstm = get_lstm_model(train_data, validation_data, 1, 100, 0, 2, 64, False)
-next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 120, 0, 1, 64, True)
+next_ten_min_lstm = get_lstm_model(train_data, validation_data, 1, 1, 100, 0, 2, 64, False)
+next_ten_min_lstm_no_amp = get_lstm_model(train_data, validation_data, 1, 1, 120, 0, 1, 64, True)
 
 # lstm to predict average amps over next forty minutes
 t, v = average_amps(train_data, validation_data, 4)

@@ -163,7 +163,7 @@ def get_lstm_model(train_data, validation_data, layers, nodes, drop, eps, b_size
     plot_predicted_values(predictions)
     plot_predictions_vs_expected(predictions, y_test)
     plot_loss(history.losses[0], history.losses[1])
-    plot.show()
+    plt.show()
     return lstm_model
 
 # split the data, 75% for training, 25% for validation
